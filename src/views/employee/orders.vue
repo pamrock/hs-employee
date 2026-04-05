@@ -28,16 +28,20 @@
               <el-icon :size="28" color="#c0c4cc"><Picture /></el-icon>
             </div>
             <div class="order-info">
-              <h4>{{ order.serviceItem || '服务项目' }}</h4>
-              <p>下单时间: {{ order.createTime || '-' }}</p>
-              <p>客户: {{ order.customerName || order.customerPhone || '未知' }}</p>
-              <p>地址: {{ order.address || '未提供' }}</p>
+              <p class="order-create-time">下单时间: {{ order.createTime || '-' }}</p>
+              <p class="order-price">金额: ¥ {{ order.totalAmount ?? 0 }}</p>
             </div>
           </div>
           <div class="order-footer">
-            <span class="price">金额: ¥ {{ order.totalAmount ?? 0 }}</span>
-            <div class="actions">
-              <el-button size="small" round @click="viewDetail(order.orderId || order.id)">查看详情</el-button>
+            <el-button
+              size="small"
+              round
+              @click="viewDetail(order)"
+              class="view-detail-btn"
+            >
+              查看详情
+            </el-button>
+            <div class="action-buttons">
               <el-button
                 v-if="order.status === '3'"
                 size="small"
@@ -68,6 +72,15 @@
               >
                 服务中
               </el-button>
+              <el-button
+                v-if="order.status === '5' || order.status === '6'"
+                size="small"
+                type="info"
+                round
+                disabled
+              >
+                {{ getStatusText(order.status) }}
+              </el-button>
             </div>
           </div>
         </div>
@@ -88,17 +101,23 @@
     <el-dialog v-model="detailVisible" title="订单详情" width="92%" class="order-detail-dialog">
       <div v-loading="detailLoading">
         <el-descriptions v-if="currentOrder" :column="1" border>
-          <el-descriptions-item label="订单号">{{ currentOrder.orderId || currentOrder.id }}</el-descriptions-item>
-          <el-descriptions-item label="服务项目">{{ currentOrder.serviceItem || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="订单号">{{ currentOrder.orderId || currentOrder.id || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="下单时间">{{ currentOrder.createTime || '-' }}</el-descriptions-item>
           <el-descriptions-item label="订单金额">¥ {{ currentOrder.totalAmount ?? 0 }}</el-descriptions-item>
           <el-descriptions-item label="订单状态">
             <el-tag :type="getStatusType(currentOrder.status)">
               {{ getStatusText(currentOrder.status) }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="下单时间">{{ currentOrder.createTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="客户信息">{{ currentOrder.customerName || currentOrder.customerPhone || '未知' }}</el-descriptions-item>
-          <el-descriptions-item label="服务地址">{{ currentOrder.address || '未提供' }}</el-descriptions-item>
+          <el-descriptions-item label="客户ID">{{ currentOrder.customerId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="服务项目ID">{{ currentOrder.serviceItemId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="订单明细号">{{ currentOrder.orderDetailNo || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="服务日期">{{ currentOrder.serviceDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="服务地址">{{ currentOrder.serviceAddress || currentOrder.address || '未提供' }}</el-descriptions-item>
+          <el-descriptions-item label="上门时间范围">{{ currentOrder.visitTimeRange || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="服务时间范围">{{ currentOrder.serviceTimeRange || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="实际开始时间">{{ currentOrder.actualStartTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="实际结束时间">{{ currentOrder.actualEndTime || '-' }}</el-descriptions-item>
           <el-descriptions-item label="备注">{{ currentOrder.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
       </div>
@@ -195,14 +214,17 @@ const getStatusText = (status) => {
   return map[status?.toString()] || (status ?? '-')
 }
 
-const viewDetail = async (orderId) => {
+const viewDetail = async (order) => {
   detailVisible.value = true
   detailLoading.value = true
-  currentOrder.value = orderList.value.find(o => (o.orderId || o.id) === orderId) || { orderId }
+  // 使用订单基本信息
+  currentOrder.value = { ...order }
   try {
-    const res = await getOrderDetail({ orderId })
-    currentOrder.value = res.data || currentOrder.value
+    // 仍然获取完整详情，包含更多字段如服务地址、时间范围等
+    const res = await getOrderDetail({ orderId: order.orderId || order.id })
+    currentOrder.value = { ...currentOrder.value, ...(res.data || {}) }
   } catch (error) {
+    // 即使获取详情失败，仍显示基本订单信息
     ElMessage.error('获取订单详情失败')
   } finally {
     detailLoading.value = false
@@ -382,11 +404,6 @@ onMounted(() => {
   flex: 1;
 }
 
-.order-info h4 {
-  margin: 0 0 6px;
-  font-size: 14px;
-  color: #1f2329;
-}
 
 .order-info p {
   margin: 2px 0;
@@ -394,26 +411,53 @@ onMounted(() => {
   color: #8d95a3;
 }
 
+.order-create-time {
+  font-size: 13px !important;
+  color: #5a6376 !important;
+  margin-bottom: 4px !important;
+}
+
+.order-price {
+  font-size: 15px !important;
+  color: #1f2329 !important;
+  font-weight: 600 !important;
+}
+
 .order-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  margin-top: 8px;
 }
 
-.price {
-  color: #1f2329;
-  font-size: 14px;
-  font-weight: 600;
+.view-detail-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.actions {
+.action-buttons {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0; /* Allow buttons to shrink if needed */
 }
 
-.actions .main-btn {
+@media (max-width: 360px) {
+  .order-footer {
+    flex-wrap: wrap;
+  }
+
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+}
+
+.action-buttons .main-btn {
   border: none;
   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
 }
