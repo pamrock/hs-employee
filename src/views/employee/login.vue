@@ -72,13 +72,18 @@ const handleLogin = async () => {
 
   try {
     loading.value = true
-    const { data } = await login({
+    const data = await login({
       username: loginForm.username,
       password: loginForm.password
     })
 
     // 存储员工 token
-    const token = data.token
+    if (!data.success) {
+      ElMessage.error(data.msg || '登录失败')
+      return
+    }
+    
+    const token = data.data.token || ''
     setEmployeeToken(token)
 
     ElMessage.success('登录成功')

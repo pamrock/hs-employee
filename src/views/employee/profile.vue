@@ -113,6 +113,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getUserInfo, updatePassword, updateUserBySelf } from '@/api/user'
 import { removeEmployeeToken } from '@/utils/auth'
+import { updateEmployee } from '@/api/employee'
 
 const router = useRouter()
 const loading = ref(false)
@@ -254,15 +255,13 @@ const handleSaveProfile = async () => {
         }
       }
 
-      // 更新个人信息（假设有更新员工信息的接口，这里暂时用 updateUserBySelf）
-      // 如果后端有专门的员工更新接口，需要替换
-      const updateRes = await updateUserBySelf({
+      const updateRes = await updateEmployee({
         id: userInfo.id,
         realName: profileForm.realName,
         phone: profileForm.phone,
         email: profileForm.email,
         gender: profileForm.gender
-      }, null)
+      })
       if (updateRes.success) {
         ElMessage.success('个人信息更新成功')
         showEditDrawer.value = false
