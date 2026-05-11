@@ -33,6 +33,12 @@ export const constantRoutes = [
         meta: { title: '订单', requiresAuth: true }
       },
       {
+        path: 'chat/:orderId',
+        name: 'EmployeeChat',
+        component: () => import('@/views/employee/chat.vue'),
+        meta: { title: '沟通', requiresAuth: true, hidden: true }
+      },
+      {
         path: 'profile',
         name: 'EmployeeProfile',
         component: () => import('@/views/employee/profile.vue'),

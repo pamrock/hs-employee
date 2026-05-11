@@ -120,6 +120,11 @@
           <el-descriptions-item label="实际结束时间">{{ currentOrder.actualEndTime || '-' }}</el-descriptions-item>
           <el-descriptions-item label="备注">{{ currentOrder.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
+      <div v-if="currentOrder && canShowChatEntry(currentOrder.status)" style="text-align:center;margin-top:16px;">
+        <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
+          联系客户
+        </el-button>
+      </div>
       </div>
     </el-dialog>
   </div>
@@ -127,6 +132,7 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getEmployeeOrderList, startEmployeeService, cancelEmployeeService, getOrderDetail } from '@/api/order'
@@ -154,6 +160,8 @@ const currentOrder = ref(null)
 
 const startingOrderId = ref(null)
 const cancellingOrderId = ref(null)
+
+const router = useRouter()
 
 const fetchList = async () => {
   loading.value = true
@@ -274,6 +282,16 @@ const cancelService = async (order) => {
   } finally {
     cancellingOrderId.value = null
   }
+}
+
+const goChat = (orderId) => {
+  detailVisible.value = false
+  router.push(`/employee/chat/${orderId}`)
+}
+
+const canShowChatEntry = (status) => {
+  const s = status?.toString()
+  return s === '3' || s === '4' || s === '5' || s === '6'
 }
 
 onMounted(() => {
