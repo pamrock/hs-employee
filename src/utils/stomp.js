@@ -12,11 +12,14 @@ export function connect(token, orderId, onMessage, onConnected) {
   }
 
   const wsUrl = import.meta.env.DEV
-    ? `/api/ws?token=${token}`
-    : `https://admint.pamrock.top/api/ws?token=${token}`
+    ? '/api/ws'
+    : 'https://admint.pamrock.top/api/ws'
 
   stompClient = new Client({
     webSocketFactory: () => new SockJS(wsUrl),
+    connectHeaders: {
+      token: token
+    },
     reconnectDelay: 5000,
     heartbeatIncoming: 10000,
     heartbeatOutgoing: 10000,

@@ -35,23 +35,25 @@
       </div>
     </div>
 
-    <div class="input-area" v-if="canSend">
+    <div class="input-area">
       <el-upload
         class="img-upload-btn"
         :show-file-list="false"
         :before-upload="handleBeforeUpload"
         :http-request="handleUploadImage"
         accept="image/*"
+        :disabled="!canSend"
       >
         <el-icon :size="22"><PictureFilled /></el-icon>
       </el-upload>
       <input
         v-model="inputText"
         class="text-input"
-        placeholder="请输入消息..."
+        :placeholder="canSend ? '请输入消息...' : chatDisabledReason"
+        :disabled="!canSend"
         @keyup.enter="handleSend"
       />
-      <button class="send-btn" :disabled="!inputText.trim()" @click="handleSend">发送</button>
+      <button class="send-btn" :disabled="!canSend || !inputText.trim()" @click="handleSend">发送</button>
     </div>
 
     <el-dialog v-model="imagePreviewVisible" width="90%" :show-close="true">
