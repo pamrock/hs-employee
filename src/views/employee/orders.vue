@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -314,6 +314,13 @@ const canShowChatEntry = (status) => {
 
 onMounted(() => {
   fetchList()
+})
+
+// When navigating back from chat, refresh unread counts
+watch(() => router.currentRoute.value.path, () => {
+  if (orderList.value.length > 0) {
+    loadUnreadCounts()
+  }
 })
 </script>
 
