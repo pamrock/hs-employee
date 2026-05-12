@@ -33,14 +33,16 @@
             </div>
           </div>
           <div class="order-footer">
-            <el-button
-              size="small"
-              round
-              @click="viewDetail(order)"
-              class="view-detail-btn"
-            >
-              查看详情
-            </el-button>
+            <el-badge :value="unreadCounts[order.orderId || order.id]" :hidden="!unreadCounts[order.orderId || order.id]" class="view-detail-badge">
+              <el-button
+                size="small"
+                round
+                @click="viewDetail(order)"
+                class="view-detail-btn"
+              >
+                查看详情
+              </el-button>
+            </el-badge>
             <div class="action-buttons">
               <el-button
                 v-if="order.status === '3'"
@@ -121,11 +123,9 @@
           <el-descriptions-item label="备注">{{ currentOrder.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
       <div v-if="currentOrder && canShowChatEntry(currentOrder.status)" style="text-align:center;margin-top:16px;">
-        <el-badge :value="unreadCounts[currentOrder.orderId || currentOrder.id]" :hidden="!unreadCounts[currentOrder.orderId || currentOrder.id]" class="chat-entry-badge">
-          <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
-            联系客户
-          </el-button>
-        </el-badge>
+        <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
+          联系客户
+        </el-button>
       </div>
       </div>
     </el-dialog>
@@ -504,11 +504,8 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-.chat-entry-badge {
-  width: 100%;
-}
-.chat-entry-badge .el-button {
-  width: 100%;
+.view-detail-badge {
+  margin-right: 8px;
 }
 
 :deep(.order-detail-dialog .el-dialog) {
