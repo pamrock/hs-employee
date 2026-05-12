@@ -4,8 +4,8 @@ export function getMessages(orderId, data) {
   return request.post(`/order/${orderId}/messages`, data)
 }
 
-export function markMessagesRead(orderId) {
-  return request.post(`/order/${orderId}/messages/read`)
+export function markMessagesRead(orderId, senderRole) {
+  return request.post(`/order/${orderId}/messages/read`, { senderRole })
 }
 
 export function canChat(orderId) {

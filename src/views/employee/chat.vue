@@ -124,7 +124,7 @@ const loadHistory = async () => {
     const data = res.data || {}
     messages.value = data.records || []
     if (messages.value.length > 0) {
-      await markMessagesRead(orderId.value)
+      await markMessagesRead(orderId.value, 'employee')
     }
     await scrollToBottom()
   } catch (e) {
