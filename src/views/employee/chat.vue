@@ -238,6 +238,9 @@ onMounted(async () => {
   await loadHistory()
   connect(token, orderId.value, onMessage, () => {
     wsConnected.value = true
+  }, (errMsg) => {
+    ElMessage.error('连接失败：' + errMsg)
+    router.back()
   })
 })
 

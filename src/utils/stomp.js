@@ -4,7 +4,7 @@ import SockJS from 'sockjs-client'
 let stompClient = null
 let subscriptions = {}
 
-export function connect(token, orderId, onMessage, onConnected) {
+export function connect(token, orderId, onMessage, onConnected, onError) {
   if (stompClient && stompClient.connected) {
     subscribeToOrder(orderId, onMessage)
     if (onConnected) onConnected()
@@ -29,7 +29,13 @@ export function connect(token, orderId, onMessage, onConnected) {
     },
     onDisconnect: () => {},
     onStompError: (frame) => {
-      console.error('STOMP error:', frame.headers['message'])
+      const msg = frame.headers['message'] || ''
+      console.error('STOMP error:', msg)
+      // Auth failures: token expired, invalid token, no active session
+      if (msg && (msg.includes('token') || msg.includes('session') || msg.includes('auth'))) {
+        disconnect()
+        if (onError) onError(msg)
+      }
     }
   })
 
