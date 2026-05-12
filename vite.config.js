@@ -15,7 +15,8 @@ export default defineConfig({
       '/api': {
         target: 'https://admint.pamrock.top',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        ws: true
       }
     }
   },
