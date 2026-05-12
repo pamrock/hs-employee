@@ -21,6 +21,12 @@ export const constantRoutes = [
     meta: { requiresAuth: false, title: '员工注册', hidden: true }
   },
   {
+    path: '/employee/chat/:orderId',
+    name: 'EmployeeChat',
+    component: () => import('@/views/employee/chat.vue'),
+    meta: { title: '沟通', requiresAuth: true, hidden: true }
+  },
+  {
     path: '/employee',
     component: EmployeeLayout,
     redirect: '/employee/orders',
@@ -31,12 +37,6 @@ export const constantRoutes = [
         name: 'EmployeeOrders',
         component: () => import('@/views/employee/orders.vue'),
         meta: { title: '订单', requiresAuth: true }
-      },
-      {
-        path: 'chat/:orderId',
-        name: 'EmployeeChat',
-        component: () => import('@/views/employee/chat.vue'),
-        meta: { title: '沟通', requiresAuth: true, hidden: true }
       },
       {
         path: 'profile',
