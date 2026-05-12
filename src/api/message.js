@@ -19,3 +19,7 @@ export function uploadChatImage(orderId, file) {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
+
+export function batchUnreadCount(orderIds) {
+  return request.post('/order/messages/unread-count', { orderIds })
+}

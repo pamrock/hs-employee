@@ -121,9 +121,11 @@
           <el-descriptions-item label="备注">{{ currentOrder.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
       <div v-if="currentOrder && canShowChatEntry(currentOrder.status)" style="text-align:center;margin-top:16px;">
-        <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
-          联系客户
-        </el-button>
+        <el-badge :value="unreadCounts[currentOrder.orderId || currentOrder.id]" :hidden="!unreadCounts[currentOrder.orderId || currentOrder.id]" class="chat-entry-badge">
+          <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
+            联系客户
+          </el-button>
+        </el-badge>
       </div>
       </div>
     </el-dialog>
@@ -136,6 +138,7 @@ import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getEmployeeOrderList, startEmployeeService, cancelEmployeeService, getOrderDetail } from '@/api/order'
+import { batchUnreadCount } from '@/api/message'
 
 const tabs = [
   { label: '已派单', value: '3' },
@@ -157,6 +160,7 @@ const queryParams = reactive({
 const detailVisible = ref(false)
 const detailLoading = ref(false)
 const currentOrder = ref(null)
+const unreadCounts = ref({})
 
 const startingOrderId = ref(null)
 const cancellingOrderId = ref(null)
@@ -178,6 +182,20 @@ const fetchList = async () => {
     ElMessage.error('网络异常，订单列表加载失败')
   } finally {
     loading.value = false
+  }
+  loadUnreadCounts()
+}
+
+const loadUnreadCounts = async () => {
+  const ids = orderList.value.map(o => o.orderId || o.id).filter(Boolean)
+  if (ids.length === 0) return
+  try {
+    const res = await batchUnreadCount(ids)
+    if (res.data) {
+      unreadCounts.value = res.data
+    }
+  } catch (e) {
+    // non-critical
   }
 }
 
@@ -484,6 +502,13 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 8px;
+}
+
+.chat-entry-badge {
+  width: 100%;
+}
+.chat-entry-badge .el-button {
+  width: 100%;
 }
 
 :deep(.order-detail-dialog .el-dialog) {
