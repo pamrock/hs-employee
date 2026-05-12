@@ -31,9 +31,15 @@ export function connect(token, orderId, onMessage, onConnected, onError) {
     onStompError: (frame) => {
       const msg = frame.headers['message'] || ''
       console.error('STOMP error:', msg)
-      // Auth failures: token expired, invalid token, no active session
-      if (msg && (msg.includes('token') || msg.includes('session') || msg.includes('auth'))) {
-        disconnect()
+      // Auth failures: force-stop reconnect loop
+      if (msg && (msg.includes('token') || msg.includes('session') || msg.includes('login'))) {
+        if (stompClient) {
+          stompClient.reconnectDelay = 0
+          stompClient.deactivate()
+        }
+        stompClient = null
+        Object.values(subscriptions).forEach(sub => sub.unsubscribe())
+        subscriptions = {}
         if (onError) onError(msg)
       }
     }
@@ -64,7 +70,8 @@ export function sendMessage(orderId, chatMessage) {
 export function disconnect() {
   Object.values(subscriptions).forEach(sub => sub.unsubscribe())
   subscriptions = {}
-  if (stompClient && stompClient.connected) {
+  if (stompClient) {
+    stompClient.reconnectDelay = 0
     stompClient.deactivate()
   }
   stompClient = null
