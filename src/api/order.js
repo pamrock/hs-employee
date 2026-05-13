@@ -51,8 +51,3 @@ export function getEmployeeOrderList(data) {
 export function startEmployeeService(data) {
   return request.post('/order/employee/start', data)
 }
-
-// 取消服务
-export function cancelEmployeeService(data) {
-  return request.post('/order/employee/cancel', data)
-}
