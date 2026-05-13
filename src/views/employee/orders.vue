@@ -56,16 +56,6 @@
                 开始服务
               </el-button>
               <el-button
-                v-if="order.status === '3'"
-                size="small"
-                type="danger"
-                round
-                @click="cancelService(order)"
-                :loading="cancellingOrderId === (order.orderId || order.id)"
-              >
-                取消服务
-              </el-button>
-              <el-button
                 v-if="order.status === '4'"
                 size="small"
                 type="success"
@@ -151,7 +141,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getEmployeeOrderList, startEmployeeService, cancelEmployeeService, getOrderDetail } from '@/api/order'
+import { getEmployeeOrderList, startEmployeeService, getOrderDetail } from '@/api/order'
 import { batchUnreadCount } from '@/api/message'
 import { consumeReadOrderIds } from '@/utils/chat-state'
 
@@ -178,7 +168,6 @@ const currentOrder = ref(null)
 const unreadCounts = ref({})
 
 const startingOrderId = ref(null)
-const cancellingOrderId = ref(null)
 
 const router = useRouter()
 
@@ -297,32 +286,6 @@ const startService = async (order) => {
     ElMessage.error('开始服务失败')
   } finally {
     startingOrderId.value = null
-  }
-}
-
-const cancelService = async (order) => {
-  const orderId = order.orderId || order.id
-  if (!orderId) {
-    ElMessage.warning('订单号不存在')
-    return
-  }
-  try {
-    await ElMessageBox.confirm('确定取消服务吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    cancellingOrderId.value = orderId
-    await cancelEmployeeService({ orderId })
-    ElMessage.success('取消服务成功')
-    // 刷新列表
-    fetchList()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('取消服务失败')
-    }
-  } finally {
-    cancellingOrderId.value = null
   }
 }
 
