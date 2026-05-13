@@ -83,6 +83,9 @@
               >
                 {{ getStatusText(order.status) }}
               </el-button>
+              <span v-if="order.status === '5' && hasRating(order)" class="rating-done">
+                客户评分 {{ getRatingScore(order) }} 分
+              </span>
             </div>
           </div>
         </div>
@@ -120,6 +123,15 @@
           <el-descriptions-item label="服务时间范围">{{ currentOrder.serviceTimeRange || '-' }}</el-descriptions-item>
           <el-descriptions-item label="实际开始时间">{{ currentOrder.actualStartTime || '-' }}</el-descriptions-item>
           <el-descriptions-item label="实际结束时间">{{ currentOrder.actualEndTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item v-if="currentOrder.status === '5'" label="客户评分">
+            <template v-if="hasRating(currentOrder)">
+              <el-rate :model-value="Number(getRatingScore(currentOrder))" disabled show-score />
+            </template>
+            <span v-else>暂无评价</span>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="currentOrder.status === '5'" label="客户评价">
+            {{ hasRating(currentOrder) ? (currentOrder.ratingComment || '暂无文字评价') : '暂无评价' }}
+          </el-descriptions-item>
           <el-descriptions-item label="备注">{{ currentOrder.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
       <div v-if="currentOrder && canShowChatEntry(currentOrder.status)" style="text-align:center;margin-top:16px;">
@@ -248,6 +260,9 @@ const getStatusText = (status) => {
   }
   return map[status?.toString()] || (status ?? '-')
 }
+
+const hasRating = (order) => Boolean(order?.rated || order?.ratingScore)
+const getRatingScore = (order) => order?.ratingScore ?? '-'
 
 const viewDetail = async (order) => {
   detailVisible.value = true
@@ -516,6 +531,13 @@ onMounted(() => {
 .view-detail-badge {
   margin-right: 8px;
 }
+
+.rating-done {
+  color: #e6a23c;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .chat-entry-badge {
   width: 80%;
 }
