@@ -12,6 +12,27 @@
       </div>
     </div>
 
+    <div class="employee-stats">
+      <div class="stat-item">
+        <span class="stat-label">从业年限</span>
+        <span class="stat-value">{{ employeeInfo.workYears ?? 0 }} 年</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">健康证</span>
+        <el-tag :type="getHealthCertType(employeeInfo.healthCertificate)" size="small">
+          {{ getHealthCertText(employeeInfo.healthCertificate) }}
+        </el-tag>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">综合评分</span>
+        <el-rate :model-value="Number(employeeInfo.starRating)" disabled show-score size="small" />
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">累计完成</span>
+        <span class="stat-value">{{ employeeInfo.completedOrders ?? 0 }} 单</span>
+      </div>
+    </div>
+
     <div class="menu-list">
       <div class="menu-item" @click="showEditDrawer = true">
         <div class="menu-left">
@@ -113,7 +134,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getUserInfo, updatePassword, updateUserBySelf } from '@/api/user'
 import { removeEmployeeToken } from '@/utils/auth'
-import { updateEmployee } from '@/api/employee'
+import { updateEmployee, getSelfInfo } from '@/api/employee'
 
 const router = useRouter()
 const loading = ref(false)
@@ -134,6 +155,24 @@ const userInfo = reactive({
   avatar: '',
   gender: 0
 })
+
+const employeeInfo = reactive({
+  workYears: 0,
+  healthCertificate: 0,
+  starRating: 0,
+  completedOrders: 0
+})
+
+const getHealthCertText = (code) => {
+  if (code === 1) return '有效'
+  if (code === 2) return '过期'
+  return '无'
+}
+const getHealthCertType = (code) => {
+  if (code === 1) return 'success'
+  if (code === 2) return 'danger'
+  return 'info'
+}
 
 const profileForm = reactive({
   realName: '',
@@ -225,6 +264,17 @@ const loadUserInfo = async () => {
       userInfo.avatar = data.avatar || ''
       userInfo.gender = data.gender ?? 0
       syncProfileForm()
+      try {
+        const empRes = await getSelfInfo()
+        if (empRes.success && empRes.data) {
+          employeeInfo.workYears = empRes.data.workYears ?? 0
+          employeeInfo.healthCertificate = empRes.data.healthCertificate ?? 0
+          employeeInfo.starRating = empRes.data.starRating ?? 0
+          employeeInfo.completedOrders = empRes.data.completedOrders ?? 0
+        }
+      } catch (e) {
+        // non-critical
+      }
     } else {
       ElMessage.error(res.msg || '获取用户信息失败')
     }
@@ -440,5 +490,36 @@ onMounted(() => {
 :deep(.password-dialog .el-dialog) {
   max-width: 456px;
   border-radius: 12px;
+}
+
+.employee-stats {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #ebedf0;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  color: #646f83;
+  font-size: 14px;
+}
+
+.stat-value {
+  color: #1f2329;
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>
