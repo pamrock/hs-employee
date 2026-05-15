@@ -39,6 +39,12 @@ export const constantRoutes = [
         meta: { title: '订单', requiresAuth: true }
       },
       {
+        path: 'stats',
+        name: 'EmployeeStats',
+        component: () => import('@/views/employee/stats.vue'),
+        meta: { title: '我的数据' }
+      },
+      {
         path: 'profile',
         name: 'EmployeeProfile',
         component: () => import('@/views/employee/profile.vue'),

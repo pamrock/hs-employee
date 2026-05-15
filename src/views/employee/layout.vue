@@ -8,6 +8,10 @@
         <el-icon class="tab-icon"><Document /></el-icon>
         <span class="tab-text">订单</span>
       </router-link>
+      <router-link to="/employee/stats" class="tab-item" active-class="active">
+        <el-icon class="tab-icon"><DataAnalysis /></el-icon>
+        <span class="tab-text">数据</span>
+      </router-link>
       <router-link to="/employee/profile" class="tab-item" active-class="active">
         <el-icon class="tab-icon"><User /></el-icon>
         <span class="tab-text">我的</span>
@@ -17,7 +21,7 @@
 </template>
 
 <script setup>
-import { Document, User } from '@element-plus/icons-vue'
+import { Document, User, DataAnalysis } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>
