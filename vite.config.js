@@ -13,11 +13,10 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:1231',
+        target: 'https://admint.pamrock.top',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        ws: true
       }
     }
   },
