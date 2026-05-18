@@ -11,3 +11,7 @@ export function register(data) {
 export function logout() {
   return request.post('/user/logout')
 }
+
+export function getCaptcha() {
+  return request.get('/auth/captcha')
+}

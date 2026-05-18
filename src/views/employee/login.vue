@@ -50,8 +50,8 @@
             </template>
           </el-input>
           <div class="captcha-img" @click="refreshCaptcha">
-            <span v-if="!captchaUrl" class="captcha-placeholder">{{ captchaPlaceholder }}</span>
-            <img v-else :src="captchaUrl" alt="验证码" />
+            <img v-if="captchaUrl" :src="captchaUrl" alt="验证码" class="captcha-image" />
+            <span v-else class="captcha-loading">点击获取</span>
           </div>
         </div>
 
@@ -81,14 +81,14 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, Key } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { login } from '@/api/login'
+import { login, getCaptcha } from '@/api/login'
 import { setEmployeeToken } from '@/utils/auth'
 
 const router = useRouter()
 const loading = ref(false)
 const rememberMe = ref(false)
 const captchaUrl = ref('')
-const captchaPlaceholder = ref('')
+const captchaId = ref('')
 
 const loginForm = reactive({
   username: '',
@@ -96,17 +96,17 @@ const loginForm = reactive({
   captcha: ''
 })
 
-const generateCaptchaPlaceholder = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+const refreshCaptcha = async () => {
+  try {
+    const res = await getCaptcha()
+    if (res.data && res.data.success !== false) {
+      const captchaData = res.data.data || res.data
+      captchaId.value = captchaData.captchaId
+      captchaUrl.value = captchaData.captchaImage
+    }
+  } catch (e) {
+    console.error('获取验证码失败', e)
   }
-  captchaPlaceholder.value = code
-}
-
-const refreshCaptcha = () => {
-  generateCaptchaPlaceholder()
 }
 
 const loadRemembered = () => {
@@ -153,7 +153,9 @@ const handleLogin = async () => {
     loading.value = true
     const data = await login({
       username: loginForm.username,
-      password: loginForm.password
+      password: loginForm.password,
+      captchaId: captchaId.value,
+      captchaCode: loginForm.captcha
     })
 
     if (!data.success) {
@@ -315,13 +317,14 @@ const handleLogin = async () => {
   object-fit: cover;
 }
 
-.captcha-placeholder {
-  font-size: 18px;
-  font-weight: bold;
-  color: #2d6a4f;
-  letter-spacing: 4px;
-  font-style: italic;
-  user-select: none;
+.captcha-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.captcha-loading {
+  font-size: 12px;
+  color: #52b788;
 }
 
 .remember-checkbox {

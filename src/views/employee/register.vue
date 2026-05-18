@@ -49,23 +49,6 @@
           </template>
         </el-input>
 
-        <div class="captcha-row">
-          <el-input
-            v-model="registerForm.captcha"
-            placeholder="验证码"
-            size="large"
-            class="captcha-input"
-          >
-            <template #prefix>
-              <el-icon><Key /></el-icon>
-            </template>
-          </el-input>
-          <div class="captcha-img" @click="refreshCaptcha">
-            <span v-if="!captchaUrl" class="captcha-placeholder">{{ captchaPlaceholder }}</span>
-            <img v-else :src="captchaUrl" alt="验证码" />
-          </div>
-        </div>
-
         <el-button
           type="primary"
           class="auth-btn"
@@ -85,48 +68,24 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock, Key } from '@element-plus/icons-vue'
+import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { register } from '@/api/login'
 
 const router = useRouter()
 const loading = ref(false)
-const captchaUrl = ref('')
-const captchaPlaceholder = ref('')
 
 const registerForm = reactive({
   account: '',
   username: '',
-  password: '',
-  captcha: ''
-})
-
-const generateCaptchaPlaceholder = () => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  captchaPlaceholder.value = code
-}
-
-const refreshCaptcha = () => {
-  generateCaptchaPlaceholder()
-}
-
-onMounted(() => {
-  refreshCaptcha()
+  password: ''
 })
 
 const handleRegister = async () => {
   if (!registerForm.account || !registerForm.username || !registerForm.password) {
     ElMessage.warning('请填写完整注册信息')
-    return
-  }
-  if (!registerForm.captcha) {
-    ElMessage.warning('请输入验证码')
     return
   }
 
@@ -263,54 +222,6 @@ const handleRegister = async () => {
 
 .auth-input :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 1px #52b788 inset !important;
-}
-
-.captcha-row {
-  display: flex;
-  gap: 10px;
-}
-
-.captcha-input {
-  flex: 1;
-}
-
-.captcha-input :deep(.el-input__wrapper) {
-  background: #f6fdf9;
-  box-shadow: none !important;
-  border-radius: 12px;
-  padding: 4px 14px;
-}
-
-.captcha-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #52b788 inset !important;
-}
-
-.captcha-img {
-  width: 100px;
-  height: 44px;
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.captcha-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.captcha-placeholder {
-  font-size: 18px;
-  font-weight: bold;
-  color: #2d6a4f;
-  letter-spacing: 4px;
-  font-style: italic;
-  user-select: none;
 }
 
 .auth-btn {
