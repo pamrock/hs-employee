@@ -154,20 +154,21 @@ import { batchUnreadCount } from '@/api/message'
 import { consumeReadOrderIds } from '@/utils/chat-state'
 
 const tabs = [
+  { label: '全部', value: '' },
   { label: '已派单', value: '3' },
   { label: '服务中', value: '4' },
   { label: '已完成', value: '5' },
   { label: '已取消', value: '6' }
 ]
 
-const activeTab = ref('3')
+const activeTab = ref('')
 const loading = ref(false)
 const orderList = ref([])
 const total = ref(0)
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  status: '3'
+  status: ''
 })
 
 const detailVisible = ref(false)
@@ -183,7 +184,9 @@ const fetchList = async () => {
   loading.value = true
   try {
     const reqData = { ...queryParams }
-    reqData.status = activeTab.value
+    if (activeTab.value !== '') {
+      reqData.status = activeTab.value
+    }
     const res = await getEmployeeOrderList(reqData)
     const data = res.data || {}
     orderList.value = data.records || data.list || (Array.isArray(data) ? data : [])
@@ -347,6 +350,8 @@ onMounted(() => {
   color: #646f83;
   padding-bottom: 4px;
   position: relative;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .tab-item.active {
