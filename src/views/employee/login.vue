@@ -13,47 +13,53 @@
         <p>家政服务平台</p>
       </div>
 
-      <div class="auth-form">
-        <el-input
-          v-model="loginForm.username"
-          placeholder="手机号/邮箱/用户名"
-          size="large"
-          class="auth-input"
-        >
-          <template #prefix>
-            <el-icon><User /></el-icon>
-          </template>
-        </el-input>
-
-        <el-input
-          v-model="loginForm.password"
-          type="password"
-          placeholder="密码"
-          size="large"
-          class="auth-input"
-          show-password
-        >
-          <template #prefix>
-            <el-icon><Lock /></el-icon>
-          </template>
-        </el-input>
-
-        <div class="captcha-row">
+      <el-form ref="formRef" :model="loginForm" :rules="rules" class="auth-form" @submit.prevent>
+        <el-form-item prop="username">
           <el-input
-            v-model="loginForm.captcha"
-            placeholder="验证码"
+            v-model="loginForm.username"
+            placeholder="手机号/邮箱/用户名"
             size="large"
-            class="captcha-input"
+            class="auth-input"
           >
             <template #prefix>
-              <el-icon><Key /></el-icon>
+              <el-icon><User /></el-icon>
             </template>
           </el-input>
-          <div class="captcha-img" @click="refreshCaptcha">
-            <img v-if="captchaUrl" :src="captchaUrl" alt="验证码" class="captcha-image" />
-            <span v-else class="captcha-loading">点击获取</span>
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="密码"
+            size="large"
+            class="auth-input"
+            show-password
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item prop="captcha">
+          <div class="captcha-row">
+            <el-input
+              v-model="loginForm.captcha"
+              placeholder="验证码"
+              size="large"
+              class="captcha-input"
+            >
+              <template #prefix>
+                <el-icon><Key /></el-icon>
+              </template>
+            </el-input>
+            <div class="captcha-img" @click="refreshCaptcha">
+              <img v-if="captchaUrl" :src="captchaUrl" alt="验证码" class="captcha-image" />
+              <span v-else class="captcha-loading">点击获取</span>
+            </div>
           </div>
-        </div>
+        </el-form-item>
 
         <el-checkbox v-model="rememberMe" class="remember-checkbox">记住密码</el-checkbox>
 
@@ -69,9 +75,8 @@
 
         <div class="auth-links">
           <span @click="router.push('/employee/register')">注册账号</span>
-          <span>忘记密码？</span>
         </div>
-      </div>
+      </el-form>
     </div>
   </div>
 </template>
@@ -89,6 +94,7 @@ const loading = ref(false)
 const rememberMe = ref(false)
 const captchaUrl = ref('')
 const captchaId = ref('')
+const formRef = ref(null)
 
 const loginForm = reactive({
   username: '',
@@ -96,8 +102,15 @@ const loginForm = reactive({
   captcha: ''
 })
 
+const rules = {
+  username: [{ required: true, message: '请输入用户名/手机号/邮箱', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+}
+
 const refreshCaptcha = async () => {
   try {
+    captchaUrl.value = ''
     const res = await getCaptcha()
     if (res.data && res.data.success !== false) {
       const captchaData = res.data.data || res.data
@@ -105,7 +118,7 @@ const refreshCaptcha = async () => {
       captchaUrl.value = captchaData.captchaImage
     }
   } catch (e) {
-    console.error('获取验证码失败', e)
+    ElMessage.warning('验证码加载失败，请点击重试')
   }
 }
 
@@ -115,7 +128,6 @@ const loadRemembered = () => {
     if (saved) {
       const data = JSON.parse(saved)
       loginForm.username = data.username || ''
-      loginForm.password = data.password || ''
       rememberMe.value = true
     }
   } catch (e) {
@@ -126,8 +138,7 @@ const loadRemembered = () => {
 const saveRemembered = () => {
   if (rememberMe.value) {
     localStorage.setItem('employee_remember', JSON.stringify({
-      username: loginForm.username,
-      password: loginForm.password
+      username: loginForm.username
     }))
   } else {
     localStorage.removeItem('employee_remember')
@@ -140,12 +151,10 @@ onMounted(() => {
 })
 
 const handleLogin = async () => {
-  if (!loginForm.username || !loginForm.password) {
-    ElMessage.warning('请输入用户名/手机号/邮箱和密码')
-    return
-  }
-  if (!loginForm.captcha) {
-    ElMessage.warning('请输入验证码')
+  if (!formRef.value) return
+  try {
+    await formRef.value.validate()
+  } catch {
     return
   }
 
@@ -160,6 +169,7 @@ const handleLogin = async () => {
 
     if (!data.success) {
       ElMessage.error(data.msg || '登录失败')
+      refreshCaptcha()
       return
     }
 
@@ -169,7 +179,9 @@ const handleLogin = async () => {
     ElMessage.success('登录成功')
     router.push('/employee/orders')
   } catch (error) {
-    console.error('登录失败:', error)
+    const msg = error?.response?.data?.msg || error?.message || '登录失败，请检查网络连接'
+    ElMessage.error(msg)
+    refreshCaptcha()
   } finally {
     loading.value = false
   }
@@ -187,7 +199,7 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .auth-bg {
@@ -265,6 +277,15 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.auth-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+.auth-form :deep(.el-form-item__error) {
+  font-size: 12px;
+  padding-top: 2px;
+  position: static;
 }
 
 .auth-input :deep(.el-input__wrapper) {

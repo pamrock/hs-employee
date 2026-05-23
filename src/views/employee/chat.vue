@@ -10,14 +10,22 @@
       </div>
     </div>
 
-    <div class="message-list" ref="msgListRef">
+    <div class="message-list" ref="msgListRef" @scroll="handleScroll">
+      <div v-if="!loading && messages.length === 0" class="empty-messages">
+        <p>暂无消息</p>
+        <p class="empty-hint">发送一条消息开始沟通</p>
+      </div>
+      <div v-if="hasMore" class="load-more-wrap">
+        <el-button v-if="!loadingMore" text size="small" @click="loadMore" :loading="loadingMore">加载更多消息</el-button>
+        <span v-else class="loading-text">加载中...</span>
+      </div>
       <div v-if="loading" class="loading-wrap">
         <span>加载中...</span>
       </div>
       <template v-for="msg in messages" :key="msg.id">
         <div class="time-divider" v-if="shouldShowTime(msg, messages)">{{ formatTime(msg.createTime) }}</div>
-        <div class="message-row" :class="{ 'is-self': isSelf(msg) }">
-          <div class="avatar" v-if="!isSelf(msg)">{{ contactAvatar }}</div>
+        <div class="message-row" :class="{ 'is-self': isSelf(msg), 'is-grouped': isGrouped(msg, messages) }">
+          <div class="avatar" v-if="!isSelf(msg) && !isGrouped(msg, messages)">{{ contactAvatar }}</div>
           <div class="message-bubble" :class="{ 'is-self': isSelf(msg) }">
             <img
               v-if="msg.msgType === 'image'"
@@ -27,11 +35,14 @@
             />
             <div v-else class="msg-text">{{ msg.content }}</div>
           </div>
-          <div class="avatar avatar-self" v-if="isSelf(msg)">{{ myAvatar }}</div>
+          <div class="avatar avatar-self" v-if="isSelf(msg) && !isGrouped(msg, messages)">{{ myAvatar }}</div>
         </div>
       </template>
       <div v-if="!canSend" class="chat-closed-hint">
         {{ chatDisabledReason }}
+      </div>
+      <div v-if="showScrollBtn" class="scroll-to-bottom" @click="scrollToBottom">
+        <el-icon><ArrowDown /></el-icon>
       </div>
     </div>
 
@@ -66,7 +77,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, PictureFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, PictureFilled, ArrowDown } from '@element-plus/icons-vue'
 import { connect, sendMessage, disconnect, isConnected } from '@/utils/stomp'
 import { getMessages, markMessagesRead, canChat, uploadChatImage } from '@/api/message'
 import { getOrderDetail } from '@/api/order'
@@ -89,6 +100,10 @@ const previewUrl = ref('')
 const contactName = ref('客户')
 const contactAvatar = ref('客')
 const myAvatar = ref('我')
+const hasMore = ref(true)
+const currentPage = ref(1)
+const loadingMore = ref(false)
+const showScrollBtn = ref(false)
 
 const token = getEmployeeToken()
 
@@ -100,6 +115,15 @@ const shouldShowTime = (msg, list) => {
   const prev = list[idx - 1]
   const diff = new Date(msg.createTime) - new Date(prev.createTime)
   return diff > 5 * 60 * 1000
+}
+
+const isGrouped = (msg, list) => {
+  const idx = list.indexOf(msg)
+  if (idx === 0) return false
+  const prev = list[idx - 1]
+  if (prev.senderRole !== msg.senderRole) return false
+  const diff = Math.abs(new Date(msg.createTime) - new Date(prev.createTime))
+  return diff < 2 * 60 * 1000
 }
 
 const formatTime = (time) => {
@@ -114,15 +138,48 @@ const scrollToBottom = async () => {
   await nextTick()
   if (msgListRef.value) {
     msgListRef.value.scrollTop = msgListRef.value.scrollHeight
+    showScrollBtn.value = false
   }
+}
+
+const loadMore = async () => {
+  if (loadingMore.value) return
+  loadingMore.value = true
+  const nextPage = currentPage.value + 1
+  try {
+    const res = await getMessages(orderId.value, { pageNo: nextPage, pageSize: 20 })
+    const data = res.data || {}
+    const list = data.records || data.data || []
+    if (list.length > 0) {
+      messages.value = [...list.reverse(), ...messages.value]
+      currentPage.value = nextPage
+    }
+    if (list.length < 20) {
+      hasMore.value = false
+    }
+  } catch (e) {
+    ElMessage.warning('加载更多消息失败')
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+const handleScroll = () => {
+  const el = msgListRef.value
+  if (!el) return
+  const threshold = 150
+  showScrollBtn.value = el.scrollHeight - el.scrollTop - el.clientHeight > threshold
 }
 
 const loadHistory = async () => {
   loading.value = true
   try {
-    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: 100 })
+    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: 20 })
     const data = res.data || {}
-    messages.value = data.records || []
+    const list = data.records || data.data || []
+    messages.value = list.length > 0 ? [...list].reverse() : []
+    currentPage.value = 1
+    hasMore.value = list.length >= 20
     if (messages.value.length > 0) {
       await markMessagesRead(orderId.value, 'employee')
     }
@@ -267,15 +324,17 @@ onUnmounted(() => {
 .chat-header { display: flex; align-items: center; padding: 10px 12px; background: #f5f7fa; border-bottom: 1px solid #e5e5e5; }
 .back-btn { font-size: 20px; margin-right: 10px; color: #333; cursor: pointer; }
 .header-info { flex: 1; }
-.contact-name { font-size: 16px; font-weight: 600; color: #1f2329; }
-.order-snippet { font-size: 12px; color: #888; }
+.contact-name { font-size: 16px; font-weight: 600; color: var(--app-text-primary); }
+.order-snippet { font-size: 12px; color: var(--app-text-muted); }
 .message-list { flex: 1; overflow-y: auto; padding: 10px 12px; }
 .loading-wrap { text-align: center; color: #aaa; padding: 20px; font-size: 13px; }
 .time-divider { text-align: center; font-size: 11px; color: #aaa; margin: 10px 0; }
 .message-row { display: flex; margin: 6px 0; align-items: flex-start; }
 .message-row.is-self { justify-content: flex-end; }
+.message-row.is-grouped { margin-top: 1px; }
+.message-row.is-grouped .message-bubble { margin-top: 0; }
 .avatar, .avatar-self { width: 34px; height: 34px; border-radius: 4px; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
-.avatar { margin-right: 8px; background: #1e3c72; }
+.avatar { margin-right: 8px; background: var(--app-primary); }
 .avatar-self { margin-left: 8px; background: #07c160; }
 .message-bubble { max-width: 65%; padding: 10px 13px; border-radius: 4px 14px 14px 14px; background: white; word-break: break-all; }
 .message-bubble.is-self { background: #95ec69; border-radius: 14px 4px 14px 14px; }
@@ -285,6 +344,45 @@ onUnmounted(() => {
 .input-area { display: flex; align-items: center; padding: 8px 10px; background: white; border-top: 1px solid #e5e5e5; gap: 8px; }
 .img-upload-btn { flex-shrink: 0; color: #888; cursor: pointer; }
 .text-input { flex: 1; border: none; outline: none; font-size: 14px; padding: 8px 4px; background: #f5f5f5; border-radius: 4px; }
-.send-btn { flex-shrink: 0; background: #1e3c72; color: white; border: none; border-radius: 4px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+.send-btn { flex-shrink: 0; background: var(--app-primary); color: white; border: none; border-radius: 4px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
 .send-btn:disabled { background: #c0c4cc; cursor: not-allowed; }
+.scroll-to-bottom {
+  position: sticky;
+  bottom: 10px;
+  float: right;
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  z-index: 10;
+}
+.load-more-wrap {
+  text-align: center;
+  padding: 10px 0;
+}
+.loading-text {
+  font-size: 12px;
+  color: #aaa;
+}
+.empty-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #aaa;
+  gap: 4px;
+}
+.empty-messages p {
+  margin: 0;
+  font-size: 14px;
+}
+.empty-hint {
+  font-size: 12px !important;
+}
 </style>

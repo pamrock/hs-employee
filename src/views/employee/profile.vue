@@ -3,7 +3,7 @@
     <div class="user-header">
       <el-avatar
         :size="68"
-        :src="userInfo.avatar || 'https://cube.elemecdn.com/0/88/03b0f1ac001e48612fc7f392099a41jpeg.jpeg'"
+        :src="userInfo.avatar || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'40\' r=\'24\' fill=\'%23c8d6e5\'/%3E%3Cellipse cx=\'50\' cy=\'85\' rx=\'35\' ry=\'20\' fill=\'%23c8d6e5\'/%3E%3C/svg%3E'"
       />
       <div class="user-info">
         <h3>{{ userInfo.realName || userInfo.username || '员工用户' }}</h3>
@@ -36,17 +36,17 @@
     <div class="menu-list">
       <div class="menu-item" @click="showEditDrawer = true">
         <div class="menu-left">
-          <el-icon class="menu-icon" color="#1e3c72"><Setting /></el-icon>
+          <el-icon class="menu-icon" color="var(--app-primary)"><Setting /></el-icon>
           <span>个人信息设置</span>
         </div>
-        <el-icon color="#999"><ArrowRight /></el-icon>
+        <el-icon color="var(--app-text-muted)"><ArrowRight /></el-icon>
       </div>
       <div class="menu-item" @click="showPasswordDialog = true">
         <div class="menu-left">
-          <el-icon class="menu-icon" color="#1e3c72"><Lock /></el-icon>
+          <el-icon class="menu-icon" color="var(--app-primary)"><Lock /></el-icon>
           <span>修改密码</span>
         </div>
-        <el-icon color="#999"><ArrowRight /></el-icon>
+        <el-icon color="var(--app-text-muted)"><ArrowRight /></el-icon>
       </div>
     </div>
 
@@ -77,7 +77,7 @@
             >
               <el-avatar
                 :size="72"
-                :src="profileForm.avatar || 'https://cube.elemecdn.com/0/88/03b0f1ac001e48612fc7f392099a41jpeg.jpeg'"
+                :src="profileForm.avatar || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'40\' r=\'24\' fill=\'%23c8d6e5\'/%3E%3Cellipse cx=\'50\' cy=\'85\' rx=\'35\' ry=\'20\' fill=\'%23c8d6e5\'/%3E%3C/svg%3E'"
               />
               <div class="avatar-edit-hint">点击更换</div>
             </el-upload>
@@ -131,7 +131,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ArrowRight, Lock, Setting } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserInfo, updatePassword, updateUserBySelf } from '@/api/user'
 import { removeEmployeeToken } from '@/utils/auth'
 import { updateEmployee, getSelfInfo } from '@/api/employee'
@@ -353,9 +353,14 @@ const handleChangePassword = async () => {
 }
 
 const handleLogout = () => {
-  removeEmployeeToken()
-  ElMessage.success('已退出登录')
-  router.push('/employee/login')
+  ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    removeEmployeeToken()
+    router.push('/employee/login')
+  }).catch(() => {})
 }
 
 onMounted(() => {
@@ -366,13 +371,13 @@ onMounted(() => {
 <style scoped>
 .profile-container {
   padding: 16px;
-  background: #f7f8fa;
-  min-height: calc(100vh - 84px);
+  background: var(--app-bg);
+  min-height: calc(100dvh - var(--tab-bar-height));
 }
 
 .user-header {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--app-bg-white);
+  border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   align-items: center;
@@ -383,19 +388,19 @@ onMounted(() => {
 .user-info h3 {
   margin: 0 0 6px;
   font-size: 17px;
-  color: #1f2329;
+  color: var(--app-text-primary);
 }
 
 .user-info p {
   margin: 0;
-  color: #7c8698;
+  color: var(--app-text-muted);
   font-size: 12px;
   line-height: 1.5;
 }
 
 .menu-list {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--app-bg-white);
+  border-radius: var(--radius-lg);
   padding: 0 14px;
 }
 
@@ -404,7 +409,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 15px 0;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--app-border-light);
   cursor: pointer;
 }
 
@@ -416,7 +421,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #1f2329;
+  color: var(--app-text-primary);
   font-size: 15px;
 }
 
@@ -434,7 +439,7 @@ onMounted(() => {
   border-radius: 22px;
   color: #ff4d4f;
   border-color: #ff4d4f;
-  background: #fff;
+  background: var(--app-bg-white);
 }
 
 .drawer-content {
@@ -489,15 +494,15 @@ onMounted(() => {
 
 :deep(.password-dialog .el-dialog) {
   max-width: 456px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 .employee-stats {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--app-bg-white);
+  border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 12px;
-  border: 1px solid #ebedf0;
+  border: 1px solid var(--app-border);
 }
 
 .stat-item {
@@ -505,7 +510,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .stat-item:last-child {
@@ -513,12 +518,12 @@ onMounted(() => {
 }
 
 .stat-label {
-  color: #646f83;
+  color: var(--app-text-secondary);
   font-size: 14px;
 }
 
 .stat-value {
-  color: #1f2329;
+  color: var(--app-text-primary);
   font-size: 14px;
   font-weight: 600;
 }

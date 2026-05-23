@@ -1,7 +1,63 @@
 @import './base.css';
 
+:root {
+  /* Primary Brand */
+  --app-primary: #1e3c72;
+  --app-primary-light: #2a5298;
+  --app-primary-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+
+  /* Backgrounds */
+  --app-bg: #f7f8fa;
+  --app-bg-white: #ffffff;
+  --app-bg-input: #f5f5f5;
+
+  /* Text */
+  --app-text-primary: #1f2329;
+  --app-text-secondary: #646f83;
+  --app-text-muted: #7c8698;
+  --app-text-placeholder: #a0a7b4;
+
+  /* Borders */
+  --app-border: #ebedf0;
+  --app-border-light: #f3f4f6;
+
+  /* Status */
+  --app-success: #67c23a;
+  --app-warning: #e6a23c;
+  --app-danger: #f56c6c;
+
+  /* Spacing (4px step) */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-lg: 16px;
+  --sp-xl: 20px;
+  --sp-xxl: 24px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-round: 20px;
+
+  /* Typography */
+  --font-title: 20px;
+  --font-subtitle: 17px;
+  --font-body: 14px;
+  --font-caption: 12px;
+
+  /* Layout */
+  --tab-bar-height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+
 #app {
   width: 100%;
   height: 100dvh;
   overflow: hidden;
+}
+
+/* Global font smoothing */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

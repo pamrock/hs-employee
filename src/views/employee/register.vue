@@ -13,41 +13,62 @@
         <p>欢迎加入员工端服务平台</p>
       </div>
 
-      <div class="auth-form">
-        <el-input
-          v-model="registerForm.account"
-          placeholder="手机号或邮箱"
-          size="large"
-          class="auth-input"
-        >
-          <template #prefix>
-            <el-icon><User /></el-icon>
-          </template>
-        </el-input>
+      <el-form ref="formRef" :model="registerForm" :rules="rules" class="auth-form" @submit.prevent>
+        <el-form-item prop="account">
+          <el-input
+            v-model="registerForm.account"
+            placeholder="手机号或邮箱"
+            size="large"
+            class="auth-input"
+          >
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
 
-        <el-input
-          v-model="registerForm.username"
-          placeholder="用户名"
-          size="large"
-          class="auth-input"
-        >
-          <template #prefix>
-            <el-icon><User /></el-icon>
-          </template>
-        </el-input>
+        <el-form-item prop="username">
+          <el-input
+            v-model="registerForm.username"
+            placeholder="用户名"
+            size="large"
+            class="auth-input"
+          >
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
 
-        <el-input
-          v-model="registerForm.password"
-          type="password"
-          placeholder="密码"
-          size="large"
-          class="auth-input"
-          show-password
-        >
-          <template #prefix>
-            <el-icon><Lock /></el-icon>
-          </template>
-        </el-input>
+        <el-form-item prop="password">
+          <el-input
+            v-model="registerForm.password"
+            type="password"
+            placeholder="密码（至少6位）"
+            size="large"
+            class="auth-input"
+            show-password
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword">
+          <el-input
+            v-model="registerForm.confirmPassword"
+            type="password"
+            placeholder="确认密码"
+            size="large"
+            class="auth-input"
+            show-password
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
 
         <el-button
           type="primary"
@@ -62,7 +83,7 @@
         <div class="auth-links">
           <span @click="router.push('/employee/login')">已有账号？去登录</span>
         </div>
-      </div>
+      </el-form>
     </div>
   </div>
 </template>
@@ -76,33 +97,77 @@ import { register } from '@/api/login'
 
 const router = useRouter()
 const loading = ref(false)
+const formRef = ref(null)
 
 const registerForm = reactive({
   account: '',
   username: '',
-  password: ''
+  password: '',
+  confirmPassword: ''
 })
 
+const validateAccount = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入手机号或邮箱'))
+    return
+  }
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  const isPhone = /^1[3-9]\d{9}$/.test(value)
+  if (!isEmail && !isPhone) {
+    callback(new Error('请输入有效的手机号或邮箱'))
+    return
+  }
+  callback()
+}
+
+const validatePassword = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请输入密码'))
+    return
+  }
+  if (value.length < 6) {
+    callback(new Error('密码长度不能少于6位'))
+    return
+  }
+  callback()
+}
+
+const validateConfirmPassword = (rule, value, callback) => {
+  if (!value) {
+    callback(new Error('请确认密码'))
+    return
+  }
+  if (value !== registerForm.password) {
+    callback(new Error('两次输入的密码不一致'))
+    return
+  }
+  callback()
+}
+
+const rules = {
+  account: [{ required: true, validator: validateAccount, trigger: 'blur' }],
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 2, message: '用户名至少2个字符', trigger: 'blur' }
+  ],
+  password: [{ required: true, validator: validatePassword, trigger: 'blur' }],
+  confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
+}
+
 const handleRegister = async () => {
-  if (!registerForm.account || !registerForm.username || !registerForm.password) {
-    ElMessage.warning('请填写完整注册信息')
+  if (!formRef.value) return
+  try {
+    await formRef.value.validate()
+  } catch {
     return
   }
 
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerForm.account)
-  const isPhone = /^1[3-9]\d{9}$/.test(registerForm.account)
-
-  if (!isEmail && !isPhone) {
-    ElMessage.warning('请输入有效的手机号或邮箱')
-    return
-  }
-
   const data = {
     username: registerForm.username,
     password: registerForm.password,
     role: 2
   }
-
   if (isEmail) {
     data.email = registerForm.account
   } else {
@@ -115,7 +180,8 @@ const handleRegister = async () => {
     ElMessage.success('注册成功')
     router.push('/employee/login')
   } catch (error) {
-    console.error('注册失败:', error)
+    const msg = error?.response?.data?.msg || error?.message || '注册失败，请稍后重试'
+    ElMessage.error(msg)
   } finally {
     loading.value = false
   }
@@ -133,7 +199,7 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .auth-bg {
@@ -211,6 +277,15 @@ const handleRegister = async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.auth-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+.auth-form :deep(.el-form-item__error) {
+  font-size: 12px;
+  padding-top: 2px;
+  position: static;
 }
 
 .auth-input :deep(.el-input__wrapper) {

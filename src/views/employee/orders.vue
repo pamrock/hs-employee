@@ -2,9 +2,12 @@
   <div class="orders-container">
     <div class="header">
       <h2>员工订单</h2>
+      <el-button text circle size="small" @click="handleRefresh" :loading="loading">
+        <el-icon><Refresh /></el-icon>
+      </el-button>
     </div>
 
-    <div class="status-tabs">
+    <div ref="tabsRef" class="status-tabs">
       <div
         v-for="tab in tabs"
         :key="tab.value"
@@ -98,7 +101,7 @@
           />
         </div>
       </template>
-      <el-empty v-else description="暂无订单数据" />
+      <el-empty v-else :description="emptyMessage" />
     </div>
 
     <el-dialog v-model="detailVisible" title="订单详情" width="92%" class="order-detail-dialog">
@@ -134,7 +137,7 @@
         </el-descriptions>
       <div v-if="currentOrder && canShowChatEntry(currentOrder.status)" style="text-align:center;margin-top:16px;">
         <el-badge :value="unreadCounts[currentOrder.orderId || currentOrder.id]" :hidden="!unreadCounts[currentOrder.orderId || currentOrder.id]" class="chat-entry-badge">
-          <el-button type="primary" round style="width:80%;background:linear-gradient(135deg, #1e3c72, #2a5298);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
+          <el-button type="primary" round style="width:80%;background:var(--app-primary-gradient);border:none;" @click="goChat(currentOrder.orderId || currentOrder.id)">
             联系客户
           </el-button>
         </el-badge>
@@ -145,9 +148,9 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Picture } from '@element-plus/icons-vue'
+import { Picture, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getEmployeeOrderList, startEmployeeService, getOrderDetail } from '@/api/order'
 import { batchUnreadCount } from '@/api/message'
@@ -162,6 +165,7 @@ const tabs = [
 ]
 
 const activeTab = ref('')
+const tabsRef = ref(null)
 const loading = ref(false)
 const orderList = ref([])
 const total = ref(0)
@@ -177,6 +181,17 @@ const currentOrder = ref(null)
 const unreadCounts = ref({})
 
 const startingOrderId = ref(null)
+
+const emptyMessage = computed(() => {
+  const map = {
+    '': '暂无订单数据',
+    '3': '暂无已派单订单',
+    '4': '暂无服务中订单',
+    '5': '暂无已完成订单',
+    '6': '暂无已取消订单'
+  }
+  return map[activeTab.value] || '暂无订单数据'
+})
 
 const router = useRouter()
 
@@ -222,6 +237,19 @@ const loadUnreadCounts = async () => {
 
 const handleTabChange = (value) => {
   activeTab.value = value
+  queryParams.pageNo = 1
+  fetchList()
+  nextTick(() => {
+    if (tabsRef.value) {
+      const activeTabEl = tabsRef.value.querySelector('.tab-item.active')
+      if (activeTabEl) {
+        activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+  })
+}
+
+const handleRefresh = () => {
   queryParams.pageNo = 1
   fetchList()
 }
@@ -318,8 +346,8 @@ onMounted(() => {
 <style scoped>
 .orders-container {
   padding: 16px;
-  background: #f7f8fa;
-  min-height: calc(100vh - 84px);
+  background: var(--app-bg);
+  min-height: calc(100dvh - var(--tab-bar-height));
 }
 
 .header {
@@ -328,8 +356,8 @@ onMounted(() => {
 
 .header h2 {
   margin: 0;
-  font-size: 20px;
-  color: #1f2329;
+  font-size: var(--font-title);
+  color: var(--app-text-primary);
 }
 
 .status-tabs {
@@ -347,7 +375,7 @@ onMounted(() => {
 .tab-item {
   flex-shrink: 0;
   font-size: 14px;
-  color: #646f83;
+  color: var(--app-text-secondary);
   padding-bottom: 4px;
   position: relative;
   white-space: nowrap;
@@ -355,7 +383,7 @@ onMounted(() => {
 }
 
 .tab-item.active {
-  color: #1e3c72;
+  color: var(--app-primary);
   font-weight: 600;
 }
 
@@ -367,7 +395,7 @@ onMounted(() => {
   bottom: -1px;
   width: 18px;
   height: 3px;
-  background: #1e3c72;
+  background: var(--app-primary);
   border-radius: 3px;
 }
 
@@ -378,10 +406,10 @@ onMounted(() => {
 }
 
 .order-card {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--app-bg-white);
+  border-radius: var(--radius-lg);
   padding: 12px;
-  border: 1px solid #ebedf0;
+  border: 1px solid var(--app-border);
 }
 
 .order-header {
@@ -390,26 +418,26 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--app-border-light);
 }
 
 .order-no {
-  color: #7b8495;
+  color: var(--app-text-muted);
   font-size: 12px;
 }
 
 .order-status {
-  color: #1e3c72;
+  color: var(--app-primary);
   font-size: 13px;
   font-weight: 600;
 }
 
 .order-status.primary {
-  color: #1e3c72;
+  color: var(--app-primary);
 }
 
 .order-status.warning {
-  color: #e6a23c;
+  color: var(--app-warning);
 }
 
 .order-status.success {
@@ -451,7 +479,7 @@ onMounted(() => {
 .order-info p {
   margin: 2px 0;
   font-size: 12px;
-  color: #8d95a3;
+  color: var(--app-text-muted);
 }
 
 .order-create-time {
@@ -462,7 +490,7 @@ onMounted(() => {
 
 .order-price {
   font-size: 15px !important;
-  color: #1f2329 !important;
+  color: var(--app-text-primary) !important;
   font-weight: 600 !important;
 }
 
@@ -502,7 +530,7 @@ onMounted(() => {
 
 .action-buttons .main-btn {
   border: none;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: var(--app-primary-gradient);
 }
 
 .pagination-wrap {
@@ -516,7 +544,7 @@ onMounted(() => {
 }
 
 .rating-done {
-  color: #e6a23c;
+  color: var(--app-warning);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -527,6 +555,6 @@ onMounted(() => {
 
 :deep(.order-detail-dialog .el-dialog) {
   max-width: 420px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 </style>
