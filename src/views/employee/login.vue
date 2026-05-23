@@ -178,7 +178,7 @@ const handleLogin = async () => {
 
 <style scoped>
 .auth-container {
-  min-height: 100vh;
+  height: 100dvh;
   width: 100%;
   max-width: 480px;
   margin: 0 auto;

@@ -53,10 +53,18 @@
   font-weight: normal;
 }
 
+html {
+  overflow: hidden;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
 body {
-  min-height: 100vh;
+  overflow: hidden;
+  height: 100%;
+  overscroll-behavior: none;
   color: var(--color-text);
-  background: var(--color-background);
+  background: #f7f8fa;
   transition:
     color 0.5s,
     background-color 0.5s;
@@ -78,4 +86,9 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus */
+input, textarea, select {
+  font-size: 16px !important;
 }
