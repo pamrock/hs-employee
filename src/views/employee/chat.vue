@@ -182,8 +182,8 @@ const PAGE_SIZE = 20
 const loadHistory = async () => {
   loading.value = true
   try {
-    // Get total count and first page in one call
-    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: PAGE_SIZE })
+    // Get total count (minimal page to avoid wasted data)
+    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: 1 })
     const data = res.data || {}
     const total = data.total || 0
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -191,12 +191,22 @@ const loadHistory = async () => {
     if (totalPages > 1) {
       // Load the LAST page (newest messages)
       const lastRes = await getMessages(orderId.value, { pageNo: totalPages, pageSize: PAGE_SIZE })
-      const list = lastRes.data?.records || lastRes.data?.data || []
-      messages.value = [...list]  // ASC order, no reverse needed
-      currentPage.value = totalPages
+      const lastList = lastRes.data?.records || lastRes.data?.data || []
+
+      if (lastList.length < PAGE_SIZE) {
+        // Last page is partial — also load previous page to fill up
+        const prevRes = await getMessages(orderId.value, { pageNo: totalPages - 1, pageSize: PAGE_SIZE })
+        const prevList = prevRes.data?.records || prevRes.data?.data || []
+        messages.value = [...prevList, ...lastList]
+        currentPage.value = totalPages - 1
+      } else {
+        messages.value = [...lastList]
+        currentPage.value = totalPages
+      }
     } else {
-      // Only one page
-      const list = data.records || data.data || []
+      // Total <= PAGE_SIZE, load page 1 with full size
+      const fullRes = await getMessages(orderId.value, { pageNo: 1, pageSize: PAGE_SIZE })
+      const list = fullRes.data?.records || fullRes.data?.data || []
       messages.value = list.length > 0 ? [...list] : []
       currentPage.value = 1
     }
