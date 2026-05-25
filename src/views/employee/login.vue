@@ -378,4 +378,14 @@ const handleLogin = async () => {
 .auth-links span {
   cursor: pointer;
 }
+
+[data-theme="dark"] .auth-container {
+  background: linear-gradient(135deg, #1a3a2a 0%, #0d2818 50%, #0a1a10 100%);
+}
+
+[data-theme="dark"] .auth-card {
+  background: rgba(26, 26, 36, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 </style>
