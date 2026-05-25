@@ -1,6 +1,10 @@
 <template>
   <div class="employee-layout-container">
     <div class="main-content">
+      <!-- Dark mode toggle - floating top-right -->
+      <div class="theme-float-btn" @click="toggleTheme">
+        <el-icon :size="18"><component :is="isDark ? Sunny : Moon" /></el-icon>
+      </div>
       <router-view v-slot="{ Component }">
         <transition name="page-fade" mode="out-in">
           <component :is="Component" />
@@ -20,10 +24,6 @@
         <el-icon class="tab-icon"><User /></el-icon>
         <span class="tab-text">我的</span>
       </router-link>
-      <div class="tab-item theme-toggle" @click="toggleTheme">
-        <el-icon class="tab-icon"><component :is="isDark ? Sunny : Moon" /></el-icon>
-        <span class="tab-text">{{ isDark ? '浅色' : '深色' }}</span>
-      </div>
     </div>
   </div>
 </template>
@@ -103,8 +103,21 @@ const { isDark, toggle: toggleTheme } = useDarkMode()
   color: var(--app-primary);
 }
 
-.theme-toggle {
+.theme-float-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--app-bg-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  color: var(--app-text-secondary);
 }
 
 /* Page transition */
