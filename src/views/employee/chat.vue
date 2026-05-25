@@ -143,18 +143,23 @@ const scrollToBottom = async () => {
 }
 
 const loadMore = async () => {
-  if (loadingMore.value) return
+  if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
-  const nextPage = currentPage.value + 1
+  const prevPage = currentPage.value - 1
+  if (prevPage < 1) {
+    hasMore.value = false
+    loadingMore.value = false
+    return
+  }
   try {
-    const res = await getMessages(orderId.value, { pageNo: nextPage, pageSize: 20 })
-    const data = res.data || {}
-    const list = data.records || data.data || []
+    const res = await getMessages(orderId.value, { pageNo: prevPage, pageSize: PAGE_SIZE })
+    const list = res.data?.records || res.data?.data || []
     if (list.length > 0) {
+      // ASC order, prepend older messages to front
       messages.value = [...list, ...messages.value]
-      currentPage.value = nextPage
+      currentPage.value = prevPage
     }
-    if (list.length < 20) {
+    if (prevPage <= 1) {
       hasMore.value = false
     }
   } catch (e) {
@@ -171,15 +176,33 @@ const handleScroll = () => {
   showScrollBtn.value = el.scrollHeight - el.scrollTop - el.clientHeight > threshold
 }
 
+const PAGE_SIZE = 20
+
+// Initial load: get total count, then load the LAST page (newest messages)
 const loadHistory = async () => {
   loading.value = true
   try {
-    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: 20 })
+    // Get total count and first page in one call
+    const res = await getMessages(orderId.value, { pageNo: 1, pageSize: PAGE_SIZE })
     const data = res.data || {}
-    const list = data.records || data.data || []
-    messages.value = list.length > 0 ? [...list] : []
-    currentPage.value = 1
-    hasMore.value = list.length >= 20
+    const total = data.total || 0
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+    if (totalPages > 1) {
+      // Load the LAST page (newest messages)
+      const lastRes = await getMessages(orderId.value, { pageNo: totalPages, pageSize: PAGE_SIZE })
+      const list = lastRes.data?.records || lastRes.data?.data || []
+      messages.value = [...list]  // ASC order, no reverse needed
+      currentPage.value = totalPages
+    } else {
+      // Only one page
+      const list = data.records || data.data || []
+      messages.value = list.length > 0 ? [...list] : []
+      currentPage.value = 1
+    }
+
+    hasMore.value = currentPage.value > 1
+
     if (messages.value.length > 0) {
       await markMessagesRead(orderId.value, 'employee')
     }
@@ -384,5 +407,12 @@ onUnmounted(() => {
 }
 .empty-hint {
   font-size: 12px !important;
+}
+/* Grouped messages: compensate for missing avatar */
+.message-row.is-self.is-grouped .message-bubble {
+  margin-right: 42px;
+}
+.message-row:not(.is-self).is-grouped .message-bubble {
+  margin-left: 42px;
 }
 </style>
