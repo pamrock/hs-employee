@@ -8,16 +8,17 @@ export function usePullRefresh(onRefresh) {
   const MAX_DIST = 100
 
   let startY = 0
+  let startScrollTop = 0
 
   function onTouchStart(e) {
     if (pullState.value === 'loading') return
     startY = e.touches[0].clientY
+    startScrollTop = e.currentTarget.scrollTop
   }
 
   function onTouchMove(e) {
     if (pullState.value === 'loading') return
-    const el = e.currentTarget
-    if (el.scrollTop > 0) {
+    if (startScrollTop > 0) {
       pullDistance.value = 0
       pullState.value = ''
       return
