@@ -61,3 +61,21 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+[data-theme="dark"] {
+  --app-primary: #4a9eff;
+  --app-primary-light: #6db3ff;
+  --app-primary-gradient: linear-gradient(135deg, #1a3a5c 0%, #2a5298 100%);
+  --app-bg: #0f0f14;
+  --app-bg-white: #1a1a24;
+  --app-bg-input: #252530;
+  --app-text-primary: #e0e0e6;
+  --app-text-secondary: #a0a0aa;
+  --app-text-muted: #707078;
+  --app-text-placeholder: #505058;
+  --app-border: #2a2a36;
+  --app-border-light: #22222e;
+  --app-success: #4caf50;
+  --app-warning: #ff9800;
+  --app-danger: #ef5350;
+}

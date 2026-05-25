@@ -20,12 +20,19 @@
         <el-icon class="tab-icon"><User /></el-icon>
         <span class="tab-text">我的</span>
       </router-link>
+      <div class="tab-item theme-toggle" @click="toggleTheme">
+        <el-icon class="tab-icon"><component :is="isDark ? 'Sunny' : 'Moon'" /></el-icon>
+        <span class="tab-text">{{ isDark ? '浅色' : '深色' }}</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { Document, User, DataAnalysis } from '@element-plus/icons-vue'
+import { Document, User, DataAnalysis, Sunny, Moon } from '@element-plus/icons-vue'
+import { useDarkMode } from '@/composables/useDarkMode'
+
+const { isDark, toggle: toggleTheme } = useDarkMode()
 </script>
 
 <style scoped>
@@ -94,6 +101,10 @@ import { Document, User, DataAnalysis } from '@element-plus/icons-vue'
 
 .tab-item.active .tab-icon {
   color: var(--app-primary);
+}
+
+.theme-toggle {
+  cursor: pointer;
 }
 
 /* Page transition */
