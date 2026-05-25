@@ -151,7 +151,7 @@ const loadMore = async () => {
     const data = res.data || {}
     const list = data.records || data.data || []
     if (list.length > 0) {
-      messages.value = [...list.reverse(), ...messages.value]
+      messages.value = [...list, ...messages.value]
       currentPage.value = nextPage
     }
     if (list.length < 20) {
@@ -177,7 +177,7 @@ const loadHistory = async () => {
     const res = await getMessages(orderId.value, { pageNo: 1, pageSize: 20 })
     const data = res.data || {}
     const list = data.records || data.data || []
-    messages.value = list.length > 0 ? [...list].reverse() : []
+    messages.value = list.length > 0 ? [...list] : []
     currentPage.value = 1
     hasMore.value = list.length >= 20
     if (messages.value.length > 0) {
