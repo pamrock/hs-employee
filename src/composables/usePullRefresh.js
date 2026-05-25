@@ -8,17 +8,18 @@ export function usePullRefresh(onRefresh) {
   const MAX_DIST = 100
 
   let startY = 0
-  let startScrollTop = 0
 
   function onTouchStart(e) {
     if (pullState.value === 'loading') return
     startY = e.touches[0].clientY
-    startScrollTop = e.currentTarget.scrollTop
   }
 
   function onTouchMove(e) {
     if (pullState.value === 'loading') return
-    if (startScrollTop > 0) {
+    // Use live scrollTop instead of stale touchstart scrollTop,
+    // to prevent pull-to-refresh from firing after infinite scroll
+    // loads more data and the DOM shifts unexpectedly.
+    if (e.currentTarget.scrollTop > 0) {
       pullDistance.value = 0
       pullState.value = ''
       return
