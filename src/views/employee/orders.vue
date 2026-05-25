@@ -2,9 +2,6 @@
   <div class="orders-container">
     <div class="header">
       <h2>员工订单</h2>
-      <el-button text circle size="small" @click="handleRefresh" :loading="loading">
-        <el-icon><Refresh /></el-icon>
-      </el-button>
     </div>
 
     <div ref="tabsRef" class="status-tabs">
@@ -19,7 +16,20 @@
       </div>
     </div>
 
-    <div class="order-list" v-loading="loading">
+    <div
+      class="order-list"
+      ref="listContainerRef"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+    >
+      <!-- Pull-to-refresh indicator -->
+      <div class="pull-indicator" :class="pullState" :style="{ height: pullDistance + 'px' }">
+        <span v-if="pullState === 'pulling'">下拉刷新</span>
+        <span v-if="pullState === 'ready'">释放立即刷新</span>
+        <span v-if="pullState === 'loading'">刷新中...</span>
+      </div>
+
       <template v-if="orderList.length">
         <div class="order-card" v-for="order in orderList" :key="order.id">
           <div class="order-header">
@@ -90,16 +100,11 @@
             </div>
           </div>
         </div>
-        <div class="pagination-wrap">
-          <el-pagination
-            v-model:current-page="queryParams.pageNo"
-            v-model:page-size="queryParams.pageSize"
-            layout="prev, pager, next"
-            :total="total"
-            :pager-count="5"
-            @current-change="handleCurrentChange"
-          />
-        </div>
+        <!-- Infinite scroll states -->
+        <div v-if="loadingMore" class="loading-more">加载中...</div>
+        <div v-if="!hasMore && orderList.length > 0" class="no-more">— 没有更多了 —</div>
+        <!-- Sentinel element for infinite scroll -->
+        <div ref="sentinelRef" class="scroll-sentinel"></div>
       </template>
       <el-empty v-else :description="emptyMessage" />
     </div>
@@ -148,9 +153,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Picture, Refresh } from '@element-plus/icons-vue'
+import { Picture } from '@element-plus/icons-vue'
+import { usePullRefresh } from '@/composables/usePullRefresh'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getEmployeeOrderList, startEmployeeService, getOrderDetail } from '@/api/order'
 import { batchUnreadCount } from '@/api/message'
@@ -168,12 +175,10 @@ const activeTab = ref('')
 const tabsRef = ref(null)
 const loading = ref(false)
 const orderList = ref([])
-const total = ref(0)
-const queryParams = reactive({
-  pageNo: 1,
-  pageSize: 10,
-  status: ''
-})
+const loadingMore = ref(false)
+const hasMore = ref(true)
+const listContainerRef = ref(null)
+let currentPage = 1
 
 const detailVisible = ref(false)
 const detailLoading = ref(false)
@@ -195,23 +200,29 @@ const emptyMessage = computed(() => {
 
 const router = useRouter()
 
-const fetchList = async () => {
-  loading.value = true
+const fetchList = async (reset = false) => {
+  if (reset) {
+    currentPage = 1
+    orderList.value = []
+    hasMore.value = true
+    loading.value = true
+  }
   try {
-    const reqData = { ...queryParams }
+    const reqData = { pageNo: currentPage, pageSize: 10 }
     if (activeTab.value !== '') {
       reqData.status = activeTab.value
     }
     const res = await getEmployeeOrderList(reqData)
     const data = res.data || {}
-    orderList.value = data.records || data.list || (Array.isArray(data) ? data : [])
-    total.value = data.total || orderList.value.length || 0
+    const records = data.records || data.list || (Array.isArray(data) ? data : [])
+    if (records.length < 10) hasMore.value = false
+    orderList.value = reset ? records : [...orderList.value, ...records]
   } catch (error) {
-    orderList.value = []
-    total.value = 0
+    if (reset) { orderList.value = []; hasMore.value = false }
     ElMessage.error('网络异常，订单列表加载失败')
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
   loadUnreadCounts()
 }
@@ -237,8 +248,7 @@ const loadUnreadCounts = async () => {
 
 const handleTabChange = (value) => {
   activeTab.value = value
-  queryParams.pageNo = 1
-  fetchList()
+  fetchList(true)
   nextTick(() => {
     if (tabsRef.value) {
       const activeTabEl = tabsRef.value.querySelector('.tab-item.active')
@@ -249,15 +259,17 @@ const handleTabChange = (value) => {
   })
 }
 
-const handleRefresh = () => {
-  queryParams.pageNo = 1
-  fetchList()
+const loadMore = () => {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  currentPage++
+  fetchList(false)
 }
 
-const handleCurrentChange = (value) => {
-  queryParams.pageNo = value
-  fetchList()
-}
+const doRefresh = () => fetchList(true)
+
+const { pullState, pullDistance, onTouchStart, onTouchMove, onTouchEnd } = usePullRefresh(doRefresh)
+const { sentinelRef } = useInfiniteScroll(loadMore, hasMore)
 
 const getStatusClass = (status) => {
   const s = status?.toString()
@@ -320,7 +332,7 @@ const startService = async (order) => {
     await startEmployeeService({ orderId })
     ElMessage.success('开始服务成功')
     // 刷新列表
-    fetchList()
+    fetchList(true)
   } catch (error) {
     ElMessage.error('开始服务失败')
   } finally {
@@ -403,6 +415,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .order-card {
@@ -441,11 +456,11 @@ onMounted(() => {
 }
 
 .order-status.success {
-  color: #67c23a;
+  color: var(--app-success);
 }
 
 .order-status.danger {
-  color: #f56c6c;
+  color: var(--app-danger);
 }
 
 .order-content {
@@ -457,7 +472,7 @@ onMounted(() => {
 .order-img {
   width: 56px;
   height: 56px;
-  background: #f5f7fa;
+  background: var(--app-bg-input);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -484,7 +499,7 @@ onMounted(() => {
 
 .order-create-time {
   font-size: 13px !important;
-  color: #5a6376 !important;
+  color: var(--app-text-secondary) !important;
   margin-bottom: 4px !important;
 }
 
@@ -533,10 +548,32 @@ onMounted(() => {
   background: var(--app-primary-gradient);
 }
 
-.pagination-wrap {
+.pull-indicator {
   display: flex;
+  align-items: center;
   justify-content: center;
-  margin-top: 8px;
+  overflow: hidden;
+  transition: height 0.2s;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 12px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.no-more {
+  text-align: center;
+  padding: 12px;
+  color: var(--app-text-placeholder);
+  font-size: 12px;
+}
+
+.scroll-sentinel {
+  height: 1px;
 }
 
 .view-detail-badge {
