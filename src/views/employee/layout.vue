@@ -21,7 +21,7 @@
         <span class="tab-text">我的</span>
       </router-link>
       <div class="tab-item theme-toggle" @click="toggleTheme">
-        <el-icon class="tab-icon"><component :is="isDark ? 'Sunny' : 'Moon'" /></el-icon>
+        <el-icon class="tab-icon"><component :is="isDark ? Sunny : Moon" /></el-icon>
         <span class="tab-text">{{ isDark ? '浅色' : '深色' }}</span>
       </div>
     </div>
