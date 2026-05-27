@@ -1,6 +1,19 @@
 // src/composables/usePullRefresh.js
 import { ref } from 'vue'
 
+function getScrollableAncestor(el) {
+  let node = el
+  while (node) {
+    const style = window.getComputedStyle(node)
+    const overflowY = style.overflowY
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
 export function usePullRefresh(onRefresh) {
   const pullState = ref('')   // '' | 'pulling' | 'ready' | 'loading'
   const pullDistance = ref(0)
@@ -16,10 +29,12 @@ export function usePullRefresh(onRefresh) {
 
   function onTouchMove(e) {
     if (pullState.value === 'loading') return
-    // Use live scrollTop instead of stale touchstart scrollTop,
-    // to prevent pull-to-refresh from firing after infinite scroll
-    // loads more data and the DOM shifts unexpectedly.
-    if (e.currentTarget.scrollTop > 0) {
+    // Check scrollTop of the actual scrollable ancestor, not just the
+    // event target. When the list is nested inside a scrollable layout
+    // container, e.currentTarget may not be the element that scrolls.
+    const scroller = getScrollableAncestor(e.currentTarget)
+    const scrollTop = scroller ? scroller.scrollTop : e.currentTarget.scrollTop
+    if (scrollTop > 0) {
       pullDistance.value = 0
       pullState.value = ''
       return
