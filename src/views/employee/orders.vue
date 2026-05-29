@@ -33,7 +33,7 @@
       <template v-if="orderList.length">
         <div class="order-card" v-for="order in orderList" :key="order.id">
           <div class="order-header">
-            <span class="order-no">订单号: {{ order.orderId || order.id }}</span>
+            <span class="customer-info">{{ order.customerName || '未知客户' }} {{ order.customerPhone || '' }}</span>
             <span class="order-status" :class="getStatusClass(order.status)">{{ getStatusText(order.status) }}</span>
           </div>
           <div class="order-content">
@@ -436,9 +436,10 @@ onMounted(() => {
   border-bottom: 1px solid var(--app-border-light);
 }
 
-.order-no {
-  color: var(--app-text-muted);
-  font-size: 12px;
+.customer-info {
+  color: var(--app-text-primary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .order-status {
