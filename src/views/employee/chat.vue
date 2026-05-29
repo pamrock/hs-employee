@@ -335,15 +335,17 @@ const onMessage = (msg) => {
 }
 
 onMounted(async () => {
-  await loadOrderInfo()
-  await checkChatStatus()
-  await loadHistory()
+  // 提前建立 WebSocket 连接，与历史消息加载并行
   connect(token, orderId.value, onMessage, () => {
     wsConnected.value = true
   }, (errMsg) => {
     ElMessage.error('连接失败：' + errMsg)
     router.back()
   })
+
+  await loadOrderInfo()
+  await checkChatStatus()
+  await loadHistory()
 })
 
 onUnmounted(() => {
